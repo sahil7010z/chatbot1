@@ -1,77 +1,70 @@
-// Adding the event listener for voice button and regular submit
-document.getElementById('chat-form').addEventListener('submit', async (e) => {
+// Handle form submission
+document.getElementById('chat-form').addEventListener('submit', async function (e) {
   e.preventDefault();
-  const input = document.getElementById('user-input');
-  const question = input.value.trim();
-  if (!question) return;
 
-  addMessage('You', question, 'user');
+  const input = document.getElementById('user-input');
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+
+  addMessage('You', userMessage, 'user');
   input.value = '';
 
-  const response = getAnswer(question); // Get answer based on predefined logic
-  addMessage('Bot', response, 'bot');
-  speak(response); // Read out the response
+  addMessage('Bot', 'Thinking...', 'bot');
+
+  try {
+    const botReply = await getAnswerFromOpenAI(userMessage);
+    updateLastBotMessage(botReply);
+    speak(botReply); // Optional voice
+  } catch (err) {
+    updateLastBotMessage("Sorry, something went wrong!");
+    console.error(err);
+  }
 });
 
-// Voice Input Button
-document.getElementById('start-voice').addEventListener('click', startVoiceRecognition);
-
-// Add messages to the chat box
-function addMessage(sender, text, role) {
-  const chatBox = document.getElementById('chat-box');
-  const message = document.createElement('div');
-  message.className = 'chat-message';
-  message.innerHTML = `<span class="${role}">${sender}:</span> ${text}`;
-  chatBox.appendChild(message);
-  chatBox.scrollTop = chatBox.scrollHeight;
+// Add message to chat
+function addMessage(name, text, role) {
+  const container = document.getElementById('chat-messages');
+  const msg = document.createElement('div');
+  msg.className = `message ${role}`;
+  msg.innerHTML = `<strong>${name}:</strong> ${text}`;
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
 }
 
-// Function to start Speech Recognition (Voice to Text)
-function startVoiceRecognition() {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'en-US';
-  recognition.start();
-
-  recognition.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript;
-    addMessage('You', transcript, 'user');
-    
-    // Get the chatbot's response
-    const response = getAnswer(transcript);
-    addMessage('Bot', response, 'bot');
-    speak(response); // Read out the response
-  };
-
-  recognition.onerror = (event) => {
-    console.error("Speech Recognition Error: ", event.error);
-  };
+// Update the last bot message (used after "Thinking...")
+function updateLastBotMessage(text) {
+  const messages = document.querySelectorAll('.message.bot');
+  if (messages.length > 0) {
+    messages[messages.length - 1].innerHTML = `<strong>Bot:</strong> ${text}`;
+  }
 }
 
-// Predefined answers for specific questions
-function getAnswer(query) {
-  // Basic rule-based matching
-  const lowerCaseQuery = query.toLowerCase();
+// Get answer from OpenAI
+async function getAnswerFromOpenAI(question) {
+  const API_KEY = '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'; 
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_KEY}`
+    },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: question }],
+      temperature: 0.7
+    })
+  });
 
-  if (lowerCaseQuery.includes('hello') || lowerCaseQuery.includes('hi')) {
-    return "Hello! How can I assist you today?";
-  }
-  if (lowerCaseQuery.includes('name')) {
-    return "I am your friendly chatbot!";
-  }
-  if (lowerCaseQuery.includes('how are you')) {
-    return "I'm just a bot, but I'm doing great! Thanks for asking.";
-  }
-  if (lowerCaseQuery.includes('what is your purpose')) {
-    return "My purpose is to assist you by answering questions and having a friendly chat!";
-  }
-  if (lowerCaseQuery.includes('bye')) {
-    return "Goodbye! Have a great day!";
-  }
+  const data = await response.json();
 
-  return "Sorry, I don't know the answer to that. Please ask something else!";
+  if (data.choices && data.choices.length > 0) {
+    return data.choices[0].message.content.trim();
+  } else {
+    return "No response received.";
+  }
 }
 
-// Use Speech Synthesis to read out the response
+// Text-to-Speech
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
