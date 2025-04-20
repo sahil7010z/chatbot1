@@ -1,4 +1,3 @@
-// Handle form submission
 document.getElementById('chat-form').addEventListener('submit', async function (e) {
   e.preventDefault();
 
@@ -14,14 +13,13 @@ document.getElementById('chat-form').addEventListener('submit', async function (
   try {
     const botReply = await getAnswerFromOpenAI(userMessage);
     updateLastBotMessage(botReply);
-    speak(botReply); // Optional voice
+    speak(botReply); // Voice response
   } catch (err) {
     updateLastBotMessage("Sorry, something went wrong!");
     console.error(err);
   }
 });
 
-// Add message to chat
 function addMessage(name, text, role) {
   const container = document.getElementById('chat-messages');
   const msg = document.createElement('div');
@@ -31,7 +29,6 @@ function addMessage(name, text, role) {
   container.scrollTop = container.scrollHeight;
 }
 
-// Update the last bot message (used after "Thinking...")
 function updateLastBotMessage(text) {
   const messages = document.querySelectorAll('.message.bot');
   if (messages.length > 0) {
@@ -39,9 +36,9 @@ function updateLastBotMessage(text) {
   }
 }
 
-// Get answer from OpenAI
 async function getAnswerFromOpenAI(question) {
-  const API_KEY = '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'; 
+  const API_KEY = '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'; // Replace this!
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -64,7 +61,6 @@ async function getAnswerFromOpenAI(question) {
   }
 }
 
-// Text-to-Speech
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
