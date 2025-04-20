@@ -40,14 +40,14 @@ function updateLastBotMessage(text) {
 
 // Function to get a response from OpenAI
 async function getAnswerFromOpenAI(question) {
-  const API_KEY = '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'; // API key exposed, which should be moved to the backend
+  const API_KEY = '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'; // Replace with your actual OpenAI API key
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        "Authorization": `Bearer ${API_KEY}` // Ensure Bearer token is correct
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
