@@ -6,7 +6,7 @@ document.getElementById('chat-form').addEventListener('submit', async function (
   if (!userMessage) return;
 
   addMessage('You', userMessage, 'user');
-  input.value = '';
+  input.value = '';  // Clear input field
 
   addMessage('Bot', 'Thinking...', 'bot');
 
@@ -16,10 +16,11 @@ document.getElementById('chat-form').addEventListener('submit', async function (
     speak(botReply); // Voice response
   } catch (err) {
     updateLastBotMessage("Sorry, something went wrong!");
-    console.error(err);
+    console.error("Error fetching bot reply:", err);
   }
 });
 
+// Function to add messages to the chat
 function addMessage(name, text, role) {
   const container = document.getElementById('chat-messages');
   const msg = document.createElement('div');
@@ -29,6 +30,7 @@ function addMessage(name, text, role) {
   container.scrollTop = container.scrollHeight;
 }
 
+// Function to update the last bot message
 function updateLastBotMessage(text) {
   const messages = document.querySelectorAll('.message.bot');
   if (messages.length > 0) {
@@ -36,31 +38,42 @@ function updateLastBotMessage(text) {
   }
 }
 
+// Function to get a response from OpenAI
 async function getAnswerFromOpenAI(question) {
-  const API_KEY = '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'; // Replace this!
+  const API_KEY = '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'; // API key exposed, which should be moved to the backend
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${API_KEY}`
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: question }],
-      temperature: 0.7
-    })
-  });
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: question }],
+        temperature: 0.7
+      })
+    });
 
-  const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
 
-  if (data.choices && data.choices.length > 0) {
-    return data.choices[0].message.content.trim();
-  } else {
-    return "No response received.";
+    const data = await response.json();
+
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content.trim();
+    } else {
+      throw new Error("No response received from OpenAI.");
+    }
+  } catch (err) {
+    console.error("Error while fetching data from OpenAI:", err);
+    throw new Error("Failed to get a response from OpenAI.");
   }
 }
 
+// Function to speak the bot's response using speech synthesis
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
